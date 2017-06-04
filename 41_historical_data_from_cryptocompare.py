@@ -58,34 +58,40 @@ def fetchCryptoOHLC(fsym, tsym):
     
 def normalize_data(df):
 	return df / df.loc[df.index[0]]
-
-symbols = ['ETH', 'LTC', 'ETC', 'DOGE', 'DGB', 'SC']
-#symbols = ['SC']
-
-# Intializing an empty DataFrame
-data = pd.DataFrame()
-
-# Adding columns with data for all requested cryptocurrencies
-for symbol in tqdm(symbols):
-    fsym = symbol
-    tsym = "BTC"
-    data_symbol = fetchCryptoOHLC(fsym, tsym)
-        
-    data = pd.concat([data, data_symbol['close']], axis = 1)
+ 
+def get_multiple_crypto(symbols):
+    # Intializing an empty DataFrame
+    data = pd.DataFrame()
     
-# Assinging correct names to the columns
-data.columns = symbols
-# Normalizing the data
+    # Adding columns with data for all requested cryptocurrencies
+    for symbol in tqdm(symbols):
+        fsym = symbol
+        tsym = "BTC"
+        data_symbol = fetchCryptoOHLC(fsym, tsym)
+            
+        data = pd.concat([data, data_symbol['close']], axis = 1)
+        
+    # Assinging correct names to the columns
+    data.columns = symbols
+    return data
+if __name__ == '__main__':
+    
+    symbols = ['ETH', 'LTC', 'ETC', 'DOGE', 'DGB', 'SC']
+    #symbols = ['SC']
+    data = get_multiple_crypto(symbols)
+    
+    # Normalizing the data
+    
+    #plt.figure(figsize=(12, 4))
+    for symbol in symbols:
+        plt.plot(data[symbol])
+    plt.ylabel('Cyrrency / BTC', fontsize=12)
+    plt.legend(loc=2)
+    plt.show()
+    '''
+    open_price = data['open']
+    high_price = data['high']
+    low_price = data['low']
+    close_price = data['close']
+    '''
 
-#plt.figure(figsize=(12, 4))
-for symbol in symbols:
-    plt.plot(data[symbol])
-plt.ylabel('Cyrrency / BTC', fontsize=12)
-plt.legend(loc=2)
-plt.show()
-'''
-open_price = data['open']
-high_price = data['high']
-low_price = data['low']
-close_price = data['close']
-'''
