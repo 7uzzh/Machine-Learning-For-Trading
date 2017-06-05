@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
+from tqdm import tqdm
 
 ''' Read: http://pandas.pydata.org/pandas-docs/stable/api.html#api-dataframe-stats '''
 
@@ -117,7 +118,7 @@ def generate_random_portfolios(num_portfolios, stocks, include_SPY = False):
     num_stocks = len(stocks) - 1
     # Initialization the final result matrix with zeros
     result_matrix = np.zeros([num_portfolios,3])
-    for i in range(num_portfolios):
+    for i in tqdm(range(num_portfolios)):
         random = np.random.random(num_stocks)
         allocs = random/ np.sum(random)
         mean_return, std_return, sharpe_ratio = find_portfolio_statistics(allocs, df, gen_plot = False)

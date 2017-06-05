@@ -59,9 +59,10 @@ def getCryptoOHLC(fsym, tsym):
     return data
     
 def normalize_data(df):
-	return df.divide(df.iloc[0])
+    return df.divide(df.iloc[0])
  
 def get_multiple_cryptos(symbols):
+    print('Obtaining data from cryptocompare.com ...')
     # Intializing an empty DataFrame
     data = pd.DataFrame()
     
@@ -77,8 +78,7 @@ def get_multiple_cryptos(symbols):
     data.columns = symbols
     return data
     
-def find_portfolio_statistics(allocs, df, gen_plot = False):
-    dfcopy = df.copy()    
+def find_portfolio_statistics(allocs, df):   
     '''
     Compute portfolio statistics:
     1) Cumulative return
@@ -95,11 +95,7 @@ def find_portfolio_statistics(allocs, df, gen_plot = False):
             The sum must be equal to 1!
         example: allocs =  [0.0, 0.5, 0.35, 0.15]
     df: DataFrame with the data
-    
-    Optional:
-    ---------
-    gen_plot: if True, a plot with performance of the allocation
-              compared to SPY500 will be shown.
+
     '''
     # Normalization
     df = (df / df.iloc[0])
@@ -116,27 +112,16 @@ def find_portfolio_statistics(allocs, df, gen_plot = False):
     # Daily returns
     dailyreturns = (df.iloc[1:] / df.iloc[:-1].values) - 1
     average_daily_return = dailyreturns.mean(axis = 0)
-    yearly_return = average_daily_return #* 252 # 252 days of trading in a year
+    yearly_return = average_daily_return * 356 # 356 days of trading in a year
     
     # Standard deviation of the daily returns
     std_daily_return = dailyreturns.std(axis = 0)
     
     # Sharpe Ratio
-    sharpe_ratio = (252 ** (0.5)) * ((average_daily_return - 0) / std_daily_return)
+    sharpe_ratio = (356 ** (0.5)) * ((average_daily_return - 0) / std_daily_return)
     ending_value = df.iloc[-1]
-    total_returns = average_daily_return*(252 / 252)
-    if gen_plot == True:
-    #Plot portfolio along SPY
-        dfcopynormed = dfcopy['SPY'] / dfcopy['SPY'].iloc[0]
-        ax = dfcopynormed.plot(title = 'Daily Portfolio Value and SPY', label = 'SPY')
-        sumcopy = dfcopy.sum(axis = 1)
-        normed = sumcopy/sumcopy.iloc[0]
-        normed.plot(label='Portfolio Value', ax = ax)
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Price')
-        ax.legend(loc = 2)
-        plt.show()
-        
+    total_returns = average_daily_return*(356 / 356) 
+       
     '''
     print('For allocation as follows:')
     print(allocs)
@@ -147,10 +132,10 @@ def find_portfolio_statistics(allocs, df, gen_plot = False):
     print('Annualized Sharpe ratio:')
     print(sharpe_ratio)
     '''
-    
     return yearly_return, std_daily_return, sharpe_ratio
     
 def generate_random_portfolios(df, num_portfolios, stocks):
+    print('Generating random portfolios...')
     # Number of stocks 
     num_stocks = len(stocks) 
     # Initialization the final result matrix with zeros
@@ -158,7 +143,7 @@ def generate_random_portfolios(df, num_portfolios, stocks):
     for i in tqdm(range(num_portfolios)):
         random = np.random.random(num_stocks)
         allocs = random/ np.sum(random)
-        mean_return, std_return, sharpe_ratio = find_portfolio_statistics(allocs, df, gen_plot = False)
+        mean_return, std_return, sharpe_ratio = find_portfolio_statistics(allocs, df)
         result_matrix[i, 0] = mean_return
         result_matrix[i, 1] = std_return
         result_matrix[i, 2] = sharpe_ratio
@@ -167,11 +152,19 @@ def generate_random_portfolios(df, num_portfolios, stocks):
 if __name__ == '__main__':
     
     symbols = ['ETH', 'LTC', 'ETC', 'DOGE', 'DGB', 'SC']
-    #symbols = ['SC']
     data = get_multiple_cryptos(symbols)
-    
     # Normalizing the data
     data = normalize_data(data)
+    
+    result_matrix = generate_random_portfolios(data, 20000, symbols)
+
+    #convert results array to Pandas DataFrame
+    results_frame = pd.DataFrame(result_matrix, columns=['ret','stdev','sharpe'])
+ 
+     #create scatter plot coloured by Sharpe Ratio
+    plt.scatter(results_frame.stdev, results_frame.ret, c = results_frame.sharpe, cmap = 'RdYlBu')
+    plt.colorbar()
+    plt.show()
     
     
     #plt.figure(figsize=(12, 4))
@@ -180,7 +173,7 @@ if __name__ == '__main__':
     plt.ylabel('Cyrrency / BTC', fontsize=12)
     plt.legend(loc=2)
     plt.show()
-   
+    
     '''
     open_price = data['open']
     high_price = data['high']
