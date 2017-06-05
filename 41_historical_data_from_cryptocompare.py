@@ -17,7 +17,7 @@ def date2timestamp(date):
     return datetime.strptime(date, '%Y-%m-%d').timestamp()
 
 
-def fetchCryptoOHLC(fsym, tsym):
+def getCryptoOHLC(fsym, tsym):
     # function fetches a crypto price-series for fsym/tsym and stores
     # it in pandas DataFrame
 
@@ -32,7 +32,8 @@ def fetchCryptoOHLC(fsym, tsym):
         # (limit-1) * 2 = days
         # One year is around 184
         limit = 184 
-        url = "https://min-api.cryptocompare.com/data/histoday?fsym=" + fsym + "&tsym=" + tsym + "&toTs=" + str(int(curr_timestamp)) + "&limit=" + str(limit)
+        url = ("https://min-api.cryptocompare.com/data/histoday?fsym=" + 
+            fsym + "&tsym=" + tsym + "&toTs=" + str(int(curr_timestamp)) + "&limit=" + str(limit))
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
         dic = json.loads(soup.prettify())
@@ -53,13 +54,15 @@ def fetchCryptoOHLC(fsym, tsym):
             df0 = df.copy()
         else:
             data = pd.concat([df, df0], axis=0)
-
+            # Fixing and error when the dataFrame contained strings instead of floats
+            data = data.astype(float)
+        
     return data
     
 def normalize_data(df):
-	return df / df.loc[df.index[0]]
+	return df.divide(df.iloc[0])
  
-def get_multiple_crypto(symbols):
+def get_multiple_cryptos(symbols):
     # Intializing an empty DataFrame
     data = pd.DataFrame()
     
@@ -67,21 +70,23 @@ def get_multiple_crypto(symbols):
     for symbol in tqdm(symbols):
         fsym = symbol
         tsym = "BTC"
-        data_symbol = fetchCryptoOHLC(fsym, tsym)
+        data_symbol = getCryptoOHLC(fsym, tsym)
             
         data = pd.concat([data, data_symbol['close']], axis = 1)
         
     # Assinging correct names to the columns
     data.columns = symbols
     return data
+    
 if __name__ == '__main__':
     
     symbols = ['ETH', 'LTC', 'ETC', 'DOGE', 'DGB', 'SC']
     #symbols = ['SC']
-    data = get_multiple_crypto(symbols)
+    data = get_multiple_cryptos(symbols)
+    
     
     # Normalizing the data
-    
+    data = normalize_data(data)
     #plt.figure(figsize=(12, 4))
     for symbol in symbols:
         plt.plot(data[symbol])
